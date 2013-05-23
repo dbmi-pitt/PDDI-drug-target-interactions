@@ -16,8 +16,14 @@ import sys
 import pickle
 
 sys.path = sys.path + ['.']
-from PDDI_Model import getPDDIDict
+from PDTI_Model import getPDTIDict
 
+#############  GLOBALS ###################################################################
+
+GBM_LIST_F = "GBM_module_RM_PM_geneList.txt"
+BRCA_LIST_F = "BRCA_module_RM_PM_geneList.txt"
+
+############## FUNCTIONS  ##################################################################
 
 def query(q,epr,f='application/json'):
     """Function that uses urllib/urllib2 to issue a SPARQL query.
@@ -45,7 +51,7 @@ def queryEndpoint(sparql_service, q):
     
     return resultset
 
-def getQueryString(offset):
+def getQueryString(geneName, offset, limit):
     return """ 
 PREFIX n2:	<http://bio2rdf.org/drugbank_resource:>
 PREFIX n3:	<http://bio2rdf.org/drugbank_vocabulary:>
@@ -54,53 +60,80 @@ PREFIX n5:	<http://www.w3.org/2000/01/rdf-schema#>
 PREFIX rdf:	<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX xsdh:	<http://www.w3.org/2001/XMLSchema#>
 
-SELECT *
+SELECT DISTINCT ?uri ?drugGeneric ?drugURI ?targetURI ?pharmacologicAction ?label
 WHERE {
-  ?s a n3:Drug-Target-Interaction; 
+  ?uri a n3:Drug-Target-Interaction; 
      n5:label ?label;
-     n3:target ?target;
-     n3:drug ?drug.
+     n3:target ?targetURI;
+     n3:drug ?drugURI;
+     n3:pharmacological-action ?pharmacologicAction.
 
-  ?target n3:gene-name ?geneName.
+  ?targetURI n3:gene-name "%s".
 
-  ?drug n5:label ?drugGeneric.
-  ?drug n3:brand ?drugBrand.
+  ?drugURI n5:label ?drugGeneric.
 }
-OFFSET %d
-LIMIT 10000
-""" % offset
+# OFFSET %d
+LIMIT %d
+""" % (geneName, offset, limit)
 
+
+
+########### MAIN  #####################################################################
 
 if __name__ == "__main__":
 
-    pddiDictL = []
+    geneListF = GBM_LIST_F
+    #geneListF = BRCA_LIST_F
+
+    f = open(geneListF, "r")
+    buf = f.read()
+    f.close()
+    geneList = buf.strip().split(";")
+
+    pdtiDictD = {}
     sparql_service = "http://drugbank.bio2rdf.org/sparql"
 
     offset = 0
-    q = getQueryString(offset)
-    resultset = queryEndpoint(sparql_service, q)
+    limit = 5000
 
-    while len(resultset["results"]["bindings"]) != 0 and offset < 20000:
-        #print json.dumps(resultset,indent=1)
-        # for i in range(0, len(resultset["results"]["bindings"])):
-        #     uri = resultset["results"]["bindings"][i]["s"]["value"]
-        #     newPDDI = getPDDIDict()
-        #     newPDDI["source"] = sparql_service
-        #     newPDDI["uri"] = uri
-        #     newPDDI["drug1"] = resultset["results"]["bindings"][i]["d1"]["value"]
-        #     newPDDI["drug2"] = resultset["results"]["bindings"][i]["d2"]["value"]
-        #     newPDDI["label"] = resultset["results"]["bindings"][i]["label"]["value"]
-            
-        #     pddiDictL.append(newPDDI)
+    for geneName in geneList:
+        q = getQueryString(geneName, offset, limit) 
+        resultset = queryEndpoint(sparql_service, q)
 
-        # offset += 10000
-        # q = getQueryString(offset)
-        # resultset = queryEndpoint(sparql_service, q)
+        # while len(resultset["results"]["bindings"]) != 0 and offset < 20000:
+        if len(resultset["results"]["bindings"]) != 0:
+            # print json.dumps(resultset,indent=1)
+            for i in range(0, len(resultset["results"]["bindings"])):
+                newPDTI = getPDTIDict()
+                newPDTI["uri"] = resultset["results"]["bindings"][i]["uri"]["value"]
+                newPDTI["source"] = sparql_service
+                newPDTI["drugGeneric"] = resultset["results"]["bindings"][i]["drugGeneric"]["value"]
+                newPDTI["drugURI"] = resultset["results"]["bindings"][i]["drugURI"]["value"]
+                newPDTI["targetURI"] = resultset["results"]["bindings"][i]["targetURI"]["value"]
+                newPDTI["pharmacologicAction"] = resultset["results"]["bindings"][i]["pharmacologicAction"]["value"]
+                newPDTI["label"] = resultset["results"]["bindings"][i]["label"]["value"]
 
-    print "INFO: No results at offset %d" % offset 
+                #print "%s" % newPDTI
 
-    f = open("drugbank-ddis.pickle","w")
-    pickle.dump(pddiDictL, f)
+                if not pdtiDictD.has_key(geneName):
+                    pdtiDictD[geneName] = [newPDTI]
+                else:
+                    pdtiDictD[geneName].append(newPDTI)
+                
+    #     offset += 10000
+    #     q = getQueryString(offset)
+    #     resultset = queryEndpoint(sparql_service, q)
+
+    # print "INFO: No results at offset %d" % offset 
+
+    pickleF = "drugbank-dtis.pickle"
+
+    print "%d drug-target mappings found" % len(pdtiDictD.keys())
+    print "genes mapped: %s" % pdtiDictD.keys()
+    print "mapping data saved to %s" % pickleF
+
+    f = open(pickleF,"w")
+    pickle.dump(pdtiDictD, f)
     f.close()
         
 
