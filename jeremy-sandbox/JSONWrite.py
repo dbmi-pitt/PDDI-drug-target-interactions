@@ -1,6 +1,6 @@
 import json
 
-list = ["hi", "hello"]
+list = {"a":["hi","goodbye"], "b":"hello"}
 
 f = open("listInJSON.txt", "w")
 
