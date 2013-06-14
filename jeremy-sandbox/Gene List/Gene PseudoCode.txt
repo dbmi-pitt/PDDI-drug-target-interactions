@@ -1,0 +1,51 @@
+# this is pseudocode for the gene list
+# This uses iterative binary search. This is reasonable since the Big Oh is log n.
+# To make this work, you have to know the number of cells in this, which is 26944. It starts at 1.
+# I then arranged the file using excel to give the index of the gene which is sorted in order. Nifty huh... Though I hope I didn't kill any important data doint that. 
+# I don't konw how to put the txt file in a sort of table but......... I'm doing it in some weird way
+# there is a comparator for the alphabet in natural order
+
+
+main
+	file = new  File("Gene - Sorted by Symbol.txt")
+	
+	gene = <queried gene somewhere>
+	
+	search(file, gene, 1, 26944)
+	
+	#somehow make a list of the stuff in the rows
+	list = []
+	int index = 0
+	while(hasNext())
+		stuff = nextString()
+		stringlist = delimit(string, "'")
+		list = stringlist
+			#somehow add after the last thing in the list
+	
+	
+
+def  search(File file, gene, int min, int max)  #returns nothing, will bring the fileinput to the gene location
+	
+	int mid = (max + min)/2
+	
+	while(int i != mid)
+		file.nextLine();
+		i = nextInt();
+	
+	String tempgene = file.nextString()
+	
+	while(max <= min)
+		if(tempgene < gene)
+			min = mid + 1
+			file.nextLine()
+			file.next()
+			tempgene = file.nextString()
+				
+		else if(tempgene > gene)
+			max = mid -1
+			file.previousLine()
+			file.previous()
+			tempgene = file.nextString()
+		
+		else
+			break
