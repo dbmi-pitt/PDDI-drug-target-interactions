@@ -196,7 +196,7 @@ if __name__ == "__main__":
 
     print "%d drug-target mappings found" % len(pdtiDictD.keys())
     print "genes mapped: %s" % pdtiDictD.keys()
-    print "genes NOT mapped: %s" % noMappingFound
+    print "%d genes NOT mapped: %s" % (len(noMappingFound), noMappingFound)
     print "mapping data saved to %s" % pickleF
         
 
