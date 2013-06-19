@@ -132,7 +132,8 @@ if __name__ == "__main__":
     noMappingFound = [] # for those symbols that can't be mapped
                         # either with the orig symbol or an alternate
 
-    for geneSymbol in geneList[1:20]:
+    for geneSymbol in geneList:
+        print "INFO: trying symbol %s" % geneSymbol
         q = getQueryString(geneSymbol, offset, limit) 
         resultset = queryEndpoint(sparql_service, q)
 
@@ -154,12 +155,15 @@ if __name__ == "__main__":
                 pdtiDictD[geneSymbol].append(newPDTI)
 
     for geneSymbol in potAlts:
-        alts = alternateSymbolsMap[geneSymbol]
-        if len(alts) == 0:
+        alts = []
+        if PHARMGKB_GENES.alternateSymbolsMap.has_key(geneSymbol):
+            alts = PHARMGKB_GENES.alternateSymbolsMap[geneSymbol]
+        else:
             noMappingFound.append(geneSymbol)
             continue
 
         for altSymbol in alts:
+            print "INFO: trying alternate symbol %s for symbol %s" % (altSymbol, geneSymbol)
             q = getQueryString(altSymbol, offset, limit) 
             resultset = queryEndpoint(sparql_service, q)
 
@@ -174,10 +178,10 @@ if __name__ == "__main__":
                 newPDTI = createPDTI(qResult, altSymbol, geneName, sparql_service)
                 #print "%s" % newPDTI
 
-                if not pdtiDictD.has_key(altSymbol):
-                    pdtiDictD[altSymbol] = [newPDTI]
+                if not pdtiDictD.has_key(geneSymbol):
+                    pdtiDictD[geneSymbol] = [newPDTI]
                 else:
-                    pdtiDictD[altSymbol].append(newPDTI)
+                    pdtiDictD[geneSymbol].append(newPDTI)
                 
     #     offset += 10000
     #     q = getQueryString(offset)
