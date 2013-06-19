@@ -9,7 +9,6 @@
 # 6/19/2013
 # 
 
-
 import csv
 import sys
 import cPickle
@@ -21,7 +20,7 @@ class PharmGKBDict:
     def __init__(self):
         self.data = {}
 
-    def readData(path):
+    def readData(self, path):
         with open(path, 'rb') as f:
             reader = csv.reader(f, delimiter='\t', quoting=csv.QUOTE_NONE)
             for i, row in enumerate(reader):
@@ -50,6 +49,6 @@ class PharmGKBDict:
                     e = {pharmID: row[0], entrezID: row[1], ensembleID: row[2], name: row[3], alternateNames: row[5], alternateSymbols: altSymbolsList, isVIP: row[7], hasVariantAnnotation: row[8], reference: referenceList, cpicGuide: row[10]}
                     self.data.update({row[4]: e})
 
-    def writeData(path):
+    def writeData(self, path):
         with open(path, 'w') as f:
             cPickle.dump(d, f)
