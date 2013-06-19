@@ -102,8 +102,8 @@ def createPDTI(qResult, geneSymbol, geneName, sparql_service):
 
 if __name__ == "__main__":
 
-    #geneListF = GBM_LIST_F
-    geneListF = BRCA_LIST_F
+    geneListF = GBM_LIST_F
+    #geneListF = BRCA_LIST_F
 
     f = open(geneListF, "r")
     buf = f.read()
