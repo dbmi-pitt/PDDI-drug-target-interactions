@@ -19,11 +19,15 @@ import pickle
 
 sys.path = sys.path + ['.']
 from PDTI_Model import getPDTIDict
+from  PharmGKBDict import PharmGKBDict
 
 #############  GLOBALS ###################################################################
 
 GBM_LIST_F = "GBM_module_RM_PM_geneList.txt"
 BRCA_LIST_F = "BRCA_module_RM_PM_geneList.txt"
+
+PHARMGKB_GENES = PharmGKBDict()
+PHARMGKB_GENES.readData('genes.tsv')
 
 ############## FUNCTIONS  ##################################################################
 
