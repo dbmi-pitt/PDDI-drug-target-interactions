@@ -10,8 +10,14 @@ from PDTI_Model import getPDTIDict
 
 #picklF = "results/pharmgkb-dtis-GBM_list-string-matching-no-syns-05232013.pickle"
 #outF = "results/pharmgkb-dtis-GBM_list-string-matching-no-syns-05232013.tsv"
-picklF = "results/drugbank-dtis-GBM_list-string-matching-no-syns-05232013.pickle"
-outF = "results/drugbank-dtis-GBM_list-string-matching-no-syns-05232013.tsv"
+#picklF = "results/drugbank-dtis-GBM_list-string-matching-no-syns-05232013.pickle"
+#outF = "results/drugbank-dtis-GBM_list-string-matching-no-syns-05232013.tsv"
+
+#picklF = "results/drugbank-dtis-GBM_list-string-matching-with-syns-06192013.pickle"
+#outF = "results/drugbank-dtis-GBM_list-string-matching-with-syns-06192013.tsv"
+picklF = "results/drugbank-dtis-BRCA_list-string-matching-with-syns-06192013.pickle"
+outF = "results/drugbank-dtis-BRCA_list-string-matching-with-syns-06192013.tsv"
+
 
 f = open(picklF,"r")
 pdtiDictD = pickle.load(f)
@@ -20,7 +26,7 @@ f.close()
 outstr = ""
 for k,v in pdtiDictD.iteritems():
     for d in v:
-        outstr += u"%s	%s\r\n" % (k, [d['drugGeneric'], d['uri'], d['pharmacologicAction'], d['label']])
+        outstr += u"%s	%s\r\n" % (k, [d['drugGeneric'], d['uri'], d['pharmacologicAction'], d['label'], d["targetName"], d["targetMappingSymbol"], d["targetURI"]])
 outstr += u"\r\n"
 
 f = codecs.open(outF,"w","utf-8")
