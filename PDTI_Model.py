@@ -17,6 +17,8 @@ def getPDTIDict():
             "drugGeneric":None,
             "drugURI":None,
             "targetURI":None,
+            "targetName":None,
+            "targetMappingSymbol":None, # either the original symbol or an alternate provided by pharmgkb
             "label":None,
             "pharmacologicAction":None,
             "source":None

@@ -23,11 +23,13 @@ from  PharmGKBDict import PharmGKBDict
 
 #############  GLOBALS ###################################################################
 
+PICKLE_FILE = "pharmgkb-dtis.pickle"
+
 GBM_LIST_F = "GBM_module_RM_PM_geneList.txt"
 BRCA_LIST_F = "BRCA_module_RM_PM_geneList.txt"
 
 PHARMGKB_GENES = PharmGKBDict()
-PHARMGKB_GENES.readData('genes.tsv')
+PHARMGKB_GENES.readData('pharmgkb-gene-list-June2013.tsv')
 
 ############## FUNCTIONS  ##################################################################
 
@@ -87,6 +89,24 @@ WHERE {
 LIMIT %d
 """ % (geneName, offset, limit)
 
+def createPDTI(qResult, geneSymbol, geneName, sparql_service):
+    newPDTI = getPDTIDict()
+    newPDTI["uri"] = qResult["uri"]["value"]
+    newPDTI["source"] = sparql_service
+    newPDTI["drugGeneric"] = qResult["drugGeneric"]["value"]
+    newPDTI["drugURI"] = qResult["drugURI"]["value"]
+    newPDTI["targetURI"] = qResult["targetURI"]["value"]
+    newPDTI["targetMappingSymbol"] = geneSymbol
+    newPDTI["targetName"] = geneName
+    pkRelationship = qResult["pkRelationship"]["value"]
+    newPDTI["label"] = qResult["label"]["value"]
+
+    if pkRelationship == "True":
+        newPDTI["pharmacologicAction"] = "pharmacokinetic activity"
+    else:
+        newPDTI["pharmacologicAction"] = "unknown"
+        
+    return newPDTI
 
 
 ########### MAIN  #####################################################################
@@ -107,34 +127,57 @@ if __name__ == "__main__":
     offset = 0
     limit = 5000
 
-    for geneName in geneList:
-        q = getQueryString(geneName, offset, limit) 
+    potAlts = [] # gene symbols that do not return results and so
+                 # require use of alternate symbols
+    noMappingFound = [] # for those symbols that can't be mapped
+                        # either with the orig symbol or an alternate
+
+    for geneSymbol in geneList[1:20]:
+        q = getQueryString(geneSymbol, offset, limit) 
         resultset = queryEndpoint(sparql_service, q)
 
         # while len(resultset["results"]["bindings"]) != 0 and offset < 20000:
-        if len(resultset["results"]["bindings"]) != 0:
+        if len(resultset["results"]["bindings"]) == 0:
+            potAlts.append(geneSymbol)
+            continue
+
+        # print json.dumps(resultset,indent=1)
+        for i in range(0, len(resultset["results"]["bindings"])):
+            geneName = PHARMGKB_GENES.data[geneSymbol]['Name']
+            qResult = resultset["results"]["bindings"][i]
+            newPDTI = createPDTI(qResult, geneSymbol, geneName, sparql_service)
+            #print "%s" % newPDTI
+            
+            if not pdtiDictD.has_key(geneSymbol):
+                pdtiDictD[geneSymbol] = [newPDTI]
+            else:
+                pdtiDictD[geneSymbol].append(newPDTI)
+
+    for geneSymbol in potAlts:
+        alts = alternateSymbolsMap[geneSymbol]
+        if len(alts) == 0:
+            noMappingFound.append(geneSymbol)
+            continue
+
+        for altSymbol in alts:
+            q = getQueryString(altSymbol, offset, limit) 
+            resultset = queryEndpoint(sparql_service, q)
+
+            # while len(resultset["results"]["bindings"]) != 0 and offset < 20000:
+            if len(resultset["results"]["bindings"]) == 0:
+                continue
+
             # print json.dumps(resultset,indent=1)
             for i in range(0, len(resultset["results"]["bindings"])):
-                newPDTI = getPDTIDict()
-                newPDTI["uri"] = resultset["results"]["bindings"][i]["uri"]["value"]
-                newPDTI["source"] = sparql_service
-                newPDTI["drugGeneric"] = resultset["results"]["bindings"][i]["drugGeneric"]["value"]
-                newPDTI["drugURI"] = resultset["results"]["bindings"][i]["drugURI"]["value"]
-                newPDTI["targetURI"] = resultset["results"]["bindings"][i]["targetURI"]["value"]
-                pkRelationship = resultset["results"]["bindings"][i]["pkRelationship"]["value"]
-                newPDTI["label"] = resultset["results"]["bindings"][i]["label"]["value"]
-
-                if pkRelationship == "True":
-                    newPDTI["pharmacologicAction"] = "pharmacokinetic activity"
-                else:
-                    newPDTI["pharmacologicAction"] = "unknown"
-
+                geneName = PHARMGKB_GENES.data[altSymbol]['Name']
+                qResult = resultset["results"]["bindings"][i]
+                newPDTI = createPDTI(qResult, altSymbol, geneName, sparql_service)
                 #print "%s" % newPDTI
 
-                if not pdtiDictD.has_key(geneName):
-                    pdtiDictD[geneName] = [newPDTI]
+                if not pdtiDictD.has_key(altSymbol):
+                    pdtiDictD[altSymbol] = [newPDTI]
                 else:
-                    pdtiDictD[geneName].append(newPDTI)
+                    pdtiDictD[altSymbol].append(newPDTI)
                 
     #     offset += 10000
     #     q = getQueryString(offset)
@@ -142,14 +185,14 @@ if __name__ == "__main__":
 
     # print "INFO: No results at offset %d" % offset 
 
-    pickleF = "pharmgkb-dtis.pickle"
-
-    print "%d drug-target mappings found" % len(pdtiDictD.keys())
-    print "genes mapped: %s" % pdtiDictD.keys()
-    print "mapping data saved to %s" % pickleF
-
+    pickleF = PICKLE_FILE
     f = open(pickleF,"w")
     pickle.dump(pdtiDictD, f)
     f.close()
+
+    print "%d drug-target mappings found" % len(pdtiDictD.keys())
+    print "genes mapped: %s" % pdtiDictD.keys()
+    print "genes NOT mapped: %s" % noMappingFound
+    print "mapping data saved to %s" % pickleF
         
 

@@ -19,6 +19,7 @@ class PharmGKBDict:
     
     def __init__(self):
         self.data = {}
+        self.alternateSymbolsMap = {}
 
     def readData(self, path):
         with open(path, 'rb') as f:
@@ -29,6 +30,7 @@ class PharmGKBDict:
                     entrezID = row[1]
                     ensembleID = row[2]
                     name = row[3]
+                    symbol = row[4]
                     alternateNames = row[5]
                     alternateSymbols = row[6]
                     isVIP = row[7]
@@ -39,13 +41,18 @@ class PharmGKBDict:
                     referenceString = row[9].split(',')
                     referenceList = []
                     for col in referenceString:
-                        referenceList.append(col)
-                    
+                        referenceList.append(col.strip('"').strip())
+
                     altSymbString = row[6].split(',')
                     altSymbolsList = []
                     for col in altSymbString:
-                        altSymbolsList.append(col)
-                
+                        altSymbol = col.strip('"').strip()
+                        altSymbolsList.append(altSymbol)
+                        if not self.alternateSymbolsMap.has_key(altSymbol):
+                            self.alternateSymbolsMap[altSymbol] = [row[4]]
+                        else:
+                            self.alternateSymbolsMap[altSymbol].append(row[4])
+                                                
                     e = {pharmID: row[0], entrezID: row[1], ensembleID: row[2], name: row[3], alternateNames: row[5], alternateSymbols: altSymbolsList, isVIP: row[7], hasVariantAnnotation: row[8], reference: referenceList, cpicGuide: row[10]}
                     self.data.update({row[4]: e})
 
