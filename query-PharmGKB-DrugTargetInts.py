@@ -28,8 +28,10 @@ PICKLE_FILE = "pharmgkb-dtis.pickle"
 GBM_LIST_F = "GBM_module_RM_PM_geneList.txt"
 BRCA_LIST_F = "BRCA_module_RM_PM_geneList.txt"
 
+# The PharmGKB gene mapping file. 
 PHARMGKB_GENES = PharmGKBDict()
 PHARMGKB_GENES.readData('pharmgkb-gene-list-June2013.tsv')
+
 
 ############## FUNCTIONS  ##################################################################
 
@@ -113,8 +115,8 @@ def createPDTI(qResult, geneSymbol, geneName, sparql_service):
 
 if __name__ == "__main__":
 
-    geneListF = GBM_LIST_F
-    #geneListF = BRCA_LIST_F
+    #geneListF = GBM_LIST_F
+    geneListF = BRCA_LIST_F
 
     f = open(geneListF, "r")
     buf = f.read()
@@ -163,6 +165,10 @@ if __name__ == "__main__":
             continue
 
         for altSymbol in alts:
+            if altSymbol.find("@") != -1:
+                print "WARNING: skipping alternate symbol %s for symbol %s because it has a character that will trigger a SPARQL query error." % (altSymbol, geneSymbol)
+                continue
+
             print "INFO: trying alternate symbol %s for symbol %s" % (altSymbol, geneSymbol)
             q = getQueryString(altSymbol, offset, limit) 
             resultset = queryEndpoint(sparql_service, q)
